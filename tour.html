@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sehlaba sa Botha-Bothe Walkaround</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #08111f;
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background: #81bfd7;
+    }
+
+    .hud {
+      position: fixed;
+      left: 24px;
+      right: 24px;
+      bottom: 22px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      pointer-events: none;
+    }
+
+    .title {
+      max-width: 520px;
+      padding: 14px 16px;
+      background: rgba(6, 14, 22, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      backdrop-filter: blur(6px);
+    }
+
+    .title h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .title p {
+      margin: 0;
+      color: #dce8ec;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 54px);
+      grid-template-rows: repeat(2, 54px);
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .control {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(6, 14, 22, 0.76);
+      color: white;
+      border-radius: 8px;
+      font-size: 24px;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .control:active {
+      background: rgba(20, 184, 166, 0.82);
+    }
+
+    .forward {
+      grid-column: 2;
+    }
+
+    .left {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .back {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .right {
+      grid-column: 3;
+      grid-row: 2;
+    }
+
+    .actions {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .actions a,
+    .actions button {
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      background: rgba(6, 14, 22, 0.72);
+      color: white;
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-decoration: none;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    @media (max-width: 720px) {
+      .hud {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .title h1 {
+        font-size: 18px;
+      }
+
+      .controls {
+        align-self: end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="tour"></canvas>
+
+  <div class="actions">
+    <button type="button" id="audioButton">Listen</button>
+    <a href="index.html?unity=1">Unity</a>
+  </div>
+
+  <div class="hud">
+    <div class="title">
+      <h1>Sehlaba sa Botha-Bothe</h1>
+      <p>Walk around the landmark, look across the ridges, and follow the path through the site.</p>
+    </div>
+    <div class="controls">
+      <button class="control forward" data-key="w">▲</button>
+      <button class="control left" data-key="a">◀</button>
+      <button class="control back" data-key="s">▼</button>
+      <button class="control right" data-key="d">▶</button>
+    </div>
+  </div>
+
+  <audio id="narration" src="sehlaba.mp3" preload="auto"></audio>
+
+  <script>
+    const canvas = document.querySelector("#tour");
+    const ctx = canvas.getContext("2d");
+    const audio = document.querySelector("#narration");
+    const audioButton = document.querySelector("#audioButton");
+    const keys = new Set();
+    const player = { x: 0, z: -220, angle: 0 };
+
+    const objects = [
+      { x: 0, z: 145, w: 120, h: 210, color: "#5d5147", top: "#827064" },
+      { x: -185, z: 320, w: 70, h: 95, color: "#6f6256", top: "#958170" },
+      { x: 195, z: 300, w: 76, h: 105, color: "#6b5b4f", top: "#957966" },
+      { x: -320, z: 150, w: 70, h: 78, color: "#4d766a", top: "#649585" },
+      { x: 330, z: 120, w: 80, h: 85, color: "#52796d", top: "#6da090" }
+    ];
+
+    const path = [
+      { x: -180, z: -350 },
+      { x: -85, z: -160 },
+      { x: -28, z: 40 },
+      { x: 22, z: 190 },
+      { x: 115, z: 340 }
+    ];
+
+    function resize() {
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+      canvas.width = Math.floor(innerWidth * ratio);
+      canvas.height = Math.floor(innerHeight * ratio);
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
+    function project(x, z, height) {
+      const dx = x - player.x;
+      const dz = z - player.z;
+      const sin = Math.sin(player.angle);
+      const cos = Math.cos(player.angle);
+      const rx = dx * cos - dz * sin;
+      const rz = dx * sin + dz * cos;
+      if (rz < 8) return null;
+      const scale = 520 / rz;
+      return {
+        x: innerWidth / 2 + rx * scale,
+        y: innerHeight * 0.62 - height * scale,
+        ground: innerHeight * 0.62 + 95 * scale,
+        scale
+      };
+    }
+
+    function drawSky() {
+      const sky = ctx.createLinearGradient(0, 0, 0, innerHeight * 0.62);
+      sky.addColorStop(0, "#87c8e8");
+      sky.addColorStop(1, "#d9eef4");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, innerWidth, innerHeight);
+
+      ctx.fillStyle = "#6e8e78";
+      ctx.beginPath();
+      ctx.moveTo(0, innerHeight * 0.46);
+      for (let x = 0; x <= innerWidth; x += 80) {
+        const y = innerHeight * 0.45 + Math.sin(x * 0.012 + player.angle) * 28;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(innerWidth, innerHeight * 0.64);
+      ctx.lineTo(0, innerHeight * 0.64);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawGround() {
+      const ground = ctx.createLinearGradient(0, innerHeight * 0.55, 0, innerHeight);
+      ground.addColorStop(0, "#a8bf7b");
+      ground.addColorStop(1, "#435d3e");
+      ctx.fillStyle = ground;
+      ctx.fillRect(0, innerHeight * 0.55, innerWidth, innerHeight * 0.45);
+
+      ctx.strokeStyle = "rgba(230, 219, 177, 0.72)";
+      ctx.lineWidth = 18;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      let started = false;
+      for (const point of path) {
+        const p = project(point.x, point.z, 0);
+        if (!p) continue;
+        if (!started) {
+          ctx.moveTo(p.x, p.ground);
+          started = true;
+        } else {
+          ctx.lineTo(p.x, p.ground);
+        }
+      }
+      ctx.stroke();
+    }
+
+    function drawObject(object) {
+      const p = project(object.x, object.z, object.h);
+      if (!p) return;
+      const w = object.w * p.scale;
+      const h = object.h * p.scale;
+      const baseY = p.ground;
+
+      ctx.fillStyle = object.color;
+      ctx.fillRect(p.x - w / 2, baseY - h, w, h);
+      ctx.fillStyle = object.top;
+      ctx.beginPath();
+      ctx.moveTo(p.x - w / 2, baseY - h);
+      ctx.lineTo(p.x, baseY - h - h * 0.32);
+      ctx.lineTo(p.x + w / 2, baseY - h);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+      ctx.fillRect(p.x - w / 2, baseY - h * 0.52, w, h * 0.52);
+    }
+
+    function step() {
+      const speed = 4.4;
+      const turn = 0.045;
+      if (keys.has("a")) player.angle -= turn;
+      if (keys.has("d")) player.angle += turn;
+      if (keys.has("w")) {
+        player.x += Math.sin(player.angle) * speed;
+        player.z += Math.cos(player.angle) * speed;
+      }
+      if (keys.has("s")) {
+        player.x -= Math.sin(player.angle) * speed;
+        player.z -= Math.cos(player.angle) * speed;
+      }
+    }
+
+    function draw() {
+      step();
+      drawSky();
+      drawGround();
+      [...objects]
+        .sort((a, b) => (b.z - player.z) - (a.z - player.z))
+        .forEach(drawObject);
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
+      ctx.beginPath();
+      ctx.arc(innerWidth / 2, innerHeight / 2, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener("resize", resize);
+    window.addEventListener("keydown", (event) => keys.add(event.key.toLowerCase()));
+    window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
+
+    document.querySelectorAll(".control").forEach((button) => {
+      const key = button.dataset.key;
+      button.addEventListener("pointerdown", () => keys.add(key));
+      button.addEventListener("pointerup", () => keys.delete(key));
+      button.addEventListener("pointerleave", () => keys.delete(key));
+    });
+
+    audioButton.addEventListener("click", () => {
+      if (audio.paused) {
+        audio.play();
+        audioButton.textContent = "Pause";
+      } else {
+        audio.pause();
+        audioButton.textContent = "Listen";
+      }
+    });
+
+    audio.addEventListener("ended", () => {
+      audioButton.textContent = "Listen";
+    });
+
+    resize();
+    draw();
+  </script>
+</body>
+</html>
