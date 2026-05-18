@@ -30,8 +30,8 @@ jobs:
         run: |
           mkdir -p public
           cp -R Build TemplateData index.html map.html tour.html README.md sehlaba.mp3 public/
-          curl -L --fail --retry 3 --output public/Build/TravelApp.data https://github.com/Mokopotsatswhany/TravelApps/releases/download/unity-data-v1/TravelApp.data
-          test -s public/Build/TravelApp.data
+          curl -L --fail --retry 3 --output public/Build/_real_webgl_build.data https://github.com/Mokopotsatswhany/TravelApps/releases/download/unity-real-webgl-v1/_real_webgl_build.data
+          test -s public/Build/_real_webgl_build.data
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

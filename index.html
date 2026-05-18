@@ -52,35 +52,23 @@
       }
 
       var buildUrl = "Build";
-      var buildVersion = "7104b1c";
-      var fallbackUrl = "tour.html?from=unity";
-      var fallbackTriggered = false;
-      function openFallback() {
-        if (fallbackTriggered) return;
-        fallbackTriggered = true;
-        window.location.replace(fallbackUrl);
-      }
-      var loaderUrl = buildUrl + "/TravelApp.loader.js?v=" + buildVersion;
+      var loaderUrl = buildUrl + "/_real_webgl_build.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/TravelApp.data?v=" + buildVersion,
-        frameworkUrl: buildUrl + "/TravelApp.framework.js?v=" + buildVersion,
-        codeUrl: buildUrl + "/TravelApp.wasm?v=" + buildVersion,
+        dataUrl: buildUrl + "/_real_webgl_build.data",
+        frameworkUrl: buildUrl + "/_real_webgl_build.framework.js",
+        codeUrl: buildUrl + "/_real_webgl_build.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "TravelApps",
         productVersion: "0.1.0",
         showBanner: unityShowBanner,
-        cacheControl: function() {
-          return "no-store";
-        },
-        errorHandler: function(err) {
-          if (String(err).toLowerCase().includes("oom") || String(err).toLowerCase().includes("memory")) {
-            openFallback();
-            return true;
-          }
-          return false;
-        },
+        // errorHandler: function(err, url, line) {
+        //    alert("error " + err + " occurred at line " + line);
+        //    // Return 'true' if you handled this error and don't want Unity
+        //    // to process it further, 'false' otherwise.
+        //    return true;
+        // },
       };
 
       // By default, Unity keeps WebGL canvas render target size matched with
@@ -135,10 +123,6 @@
                 };
 
               }).catch((message) => {
-                if (String(message).toLowerCase().includes("oom") || String(message).toLowerCase().includes("memory")) {
-                  openFallback();
-                  return;
-                }
                 alert(message);
               });
             };

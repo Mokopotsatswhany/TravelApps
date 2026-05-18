@@ -1,2 +1,5 @@
-Build/TravelApp.data
+Build/*.data
 .chrome-unity-profile/
+_real_webgl_build/
+_unity_build_project/
+unity-real-webgl-build.log
