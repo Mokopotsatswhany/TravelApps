@@ -112,6 +112,9 @@
       font-weight: 600;
       transition: 0.3s;
       display: inline-block;
+      border: 0;
+      cursor: pointer;
+      font-size: 16px;
     }
 
     .btn-primary {
@@ -171,11 +174,30 @@
         </p>
         <div class="hero-buttons">
           <a href="index.html" class="btn btn-primary">Start Exploring</a>
-          <a href="#home" class="btn btn-secondary">View Guided Tours</a>
+          <button type="button" class="btn btn-secondary" id="guided-tour-button">Listen Guided Tours</button>
         </div>
       </div>
     </div>
   </header>
 
+  <audio id="guided-tour-audio" src="sehlaba.mp3" preload="auto"></audio>
+  <script>
+    const guidedTourButton = document.querySelector("#guided-tour-button");
+    const guidedTourAudio = document.querySelector("#guided-tour-audio");
+
+    guidedTourButton.addEventListener("click", () => {
+      if (guidedTourAudio.paused) {
+        guidedTourAudio.play();
+        guidedTourButton.textContent = "Pause Guided Tour";
+      } else {
+        guidedTourAudio.pause();
+        guidedTourButton.textContent = "Listen Guided Tours";
+      }
+    });
+
+    guidedTourAudio.addEventListener("ended", () => {
+      guidedTourButton.textContent = "Listen Guided Tours";
+    });
+  </script>
 </body>
 </html>
