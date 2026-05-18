@@ -52,12 +52,13 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/TravelApp.loader.js";
+      var buildVersion = "3bc48c3";
+      var loaderUrl = buildUrl + "/TravelApp.loader.js?v=" + buildVersion;
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/TravelApp.data",
-        frameworkUrl: buildUrl + "/TravelApp.framework.js",
-        codeUrl: buildUrl + "/TravelApp.wasm",
+        dataUrl: buildUrl + "/TravelApp.data?v=" + buildVersion,
+        frameworkUrl: buildUrl + "/TravelApp.framework.js?v=" + buildVersion,
+        codeUrl: buildUrl + "/TravelApp.wasm?v=" + buildVersion,
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "TravelApps",
@@ -76,6 +77,7 @@
       // Set this to false if you want to decouple this synchronization from
       // happening inside the engine, and you would instead like to size up
       // the canvas DOM size and WebGL render target sizes yourself.
+      config.devicePixelRatio = 1;
       // config.matchWebGLToCanvasSize = false;
 
       // If you would like all file writes inside Unity Application.persistentDataPath
